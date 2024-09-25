@@ -18,56 +18,68 @@ const columns = [
 
 const Users = () => {
   const [isActionModalOpen, setActionModal] = useState<any>({});
-  const [loading, setLoading] = useState(false)
-  const [reload, setReload] = useState(false)
-  const [form, setForm] = useState<any>({})
+  const [loading, setLoading] = useState(false);
+  const [reload, setReload] = useState(false);
+  const [form, setForm] = useState<any>({});
   const [searchTerm, setSearchTerm] = useState("");
-  let { user } = useAuthStore(state => state);
+  let { user } = useAuthStore((state) => state);
   // @ts-ignore
-  const { users, setUsers } = useUsersStore(state => state);
+  const { users, setUsers } = useUsersStore((state) => state);
   useEffect(() => {
-    setLoading(true)
-    publicApi.get("/api/v1/users",{
-      headers: {
-        Authorization: `Bearer ${user?.jwtToken}`,
-      },
-    })
-      .then((res) => {
-        // setUsers(res.data.users)
-        console.log(res.data.users)
-        setLoading(false)
+    setLoading(true);
+    publicApi
+      .get("/api/v1/users", {
+        headers: {
+          Authorization: `Bearer ${user?.jwtToken}`,
+        },
       })
-      .catch((error) => console.log(error.message))
-  }, [reload])
+      .then((res) => {
+        setUsers(res.data.users);
+        setLoading(false);
+      })
+      .catch((error) => console.log(error.message));
+  }, [reload]);
 
-  const filteredData = users?.filter((user: any) =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.phone.toString().includes(searchTerm.toLowerCase())
+  const filteredData = users?.filter(
+    (user: any) =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.phone.toString().includes(searchTerm.toLowerCase())
   );
 
   const data = React.useMemo(() => {
-    return filteredData?.map((e:any) => {
+    return filteredData?.map((e: any) => {
       return {
         ...e,
         userId: e._id,
-      }
-    })
-  }, [filteredData])
+      };
+    });
+  }, [filteredData]);
 
-  const handleActionsModal = ({ action, id = null }: { action: string, id?: string | null }) => {
+  const handleActionsModal = ({
+    action,
+    id = null,
+  }: {
+    action: string;
+    id?: string | null;
+  }) => {
     setActionModal({
       ...isActionModalOpen,
       action: action,
       isOpen: true,
     });
     if (action === "edit") {
-      const users = data.find((e:any) => e.organizationId === id);
+      const users = data.find((e: any) => e.userId === id);
       setForm({
         ...users,
       });
     } else if (action === "delete") {
-      const users = data.find((e:any) => e.organizationId === id);
+      const users = data.find((e: any) => e.userId === id);
+      setForm({
+        ...users,
+      });
+    } else if (action === "view") {
+      const users = data.find((e: any) => e.userId === id);
       setForm({
         ...users,
       });
@@ -84,11 +96,12 @@ const Users = () => {
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    console.log("hi");
     if (isActionModalOpen.action === "edit") {
       e.preventDefault();
-      setLoading(true)
+      setLoading(true);
       try {
-        publicApi.put(`/api/v1/users/${form._id}`, form, {
+        publicApi.put(`/api/v1/users/${form.userId}`, form, {
           headers: {
             Authorization: `Bearer ${user?.jwtToken}`,
           },
@@ -105,32 +118,31 @@ const Users = () => {
       } catch (error: any) {
         // Handle errors here, if needed
         toast.error(error.message);
-      }
-      finally {
-        setLoading(false)
+      } finally {
+        setLoading(false);
       }
     } else if (isActionModalOpen.action === "delete") {
-      setLoading(true)
-      publicApi.delete(`/api/v1/users/${form.oranizationId}`, {
-        headers: {
-          Authorization: `Bearer ${user?.jwtToken}`,
-        },
-      })
+      setLoading(true);
+      publicApi
+        .delete(`/api/v1/users/${form.userId}`, {
+          headers: {
+            Authorization: `Bearer ${user?.jwtToken}`,
+          },
+        })
         .then((res) => {
-          toast.success(res.data.message)
-          setReload(!reload)
+          toast.success(res.data.message);
+          setReload(!reload);
           setActionModal({
             ...isActionModalOpen,
             isOpen: false,
             action: "",
           });
-          setForm({})
+          setForm({});
         })
         .catch((error) => toast.error(error.data.message))
-        .finally(() => setLoading(false))
+        .finally(() => setLoading(false));
     }
   };
-
 
   const handleInputChange = (e: any) => {
     setForm({
@@ -224,16 +236,14 @@ const Users = () => {
               <button onClick={() => setReload(!reload)} type="button">
                 <icon.SlRefresh className="w-5 h-5 hover:rotate-[180deg] transition-all" />
               </button>
-              <div
-                className="rounded-md flex items-center justify-center gap-2"
-              >
+              <div className="rounded-md flex items-center justify-center gap-2">
                 <Input
-                color="primary"
-                placeholder="Search Users"
-                className="w-[20rem]"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                 />
+                  color="primary"
+                  placeholder="Search Users"
+                  className="w-[20rem]"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
             </div>
           </div>
@@ -252,32 +262,38 @@ const Users = () => {
         heading={
           isActionModalOpen.action === "edit"
             ? "Edit User"
-              : "Delete User"
+            : isActionModalOpen.action === "view"
+            ? "View User"
+            : "Delete User"
         }
         isOpen={isActionModalOpen.isOpen}
         onClose={handleActionsModalClose}
         cta={
           isActionModalOpen.action === "edit"
             ? "Edit User"
-              : "Delete User"
+            : isActionModalOpen.action === "view"
+            ? "View User"
+            : "Delete User"
         }
         formid={
           isActionModalOpen.action === "edit"
             ? "edituser"
-              : "deleteuser"
+            : isActionModalOpen.action === "view"
+            ? ""
+            : ""
         }
         onSubmit={handleSubmit}
         ctaClass={isActionModalOpen.action === "delete" ? "danger" : "primary"}
         modalClass="text-mainBlack"
-        enableFooter={true}
+        enableFooter={isActionModalOpen.action === "view" ? false : true}
       >
         {isActionModalOpen.action === "delete" ? (
           <div className="w-full flex items-center justify-center">
             <p className="p-2 text-center flex items-center justify-center font-bold">
-              Are you sure you want to delete this Organisation?
+              Are you sure you want to delete this User?
             </p>
           </div>
-        ) : (
+        ) : isActionModalOpen.action === "edit" ? (
           <>
             <div className="w-full flex items-center justify-center gap-1 flex-col py-2">
               <h1 className="capitalize text-sm font-medium">
@@ -289,9 +305,7 @@ const Users = () => {
             </div>
             <form
               id={
-                isActionModalOpen.action === "edit"
-                  ? "edituser"
-                    : "deleteuser"
+                isActionModalOpen.action === "edit" ? "edituser" : "deleteuser"
               }
               onSubmit={handleSubmit}
               className="flex items-center justify-center gap-4 flex-col"
@@ -341,6 +355,38 @@ const Users = () => {
                 </div>
               </div>
             </form>
+          </>
+        ) : (
+          <>
+            <div className="w-full flex items-center justify-center gap-2 flex-col py-2">
+              <h1 className="capitalize text-sm font-medium">
+                {"User Details"}
+              </h1>
+              {Object.entries(form).map(([key, value]) => {
+                if (["password","__v","_id", "role"].includes(key)) return null; // Skip the password field
+
+                return (
+                  <div
+                    key={key}
+                    className="flex justify-between w-full max-w-xs capitalize"
+                  >
+                    <span className="font-medium text-sm">{key}</span>
+                    {key === "img" ? (
+                      
+                      <img
+                      // @ts-ignore
+                        src={value}
+                        alt="User Image"
+                        className="rounded-full w-12 h-12"
+                      />
+                    ) : (
+                      // @ts-ignore
+                      <span className="text-xs font-normal truncate lowercase">{value}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </>
         )}
       </ModalContainer>

@@ -13,7 +13,7 @@ const columns = [
   { name: "Event Type", uid: "eventType" },
   { name: "User Name", uid: "name" },
   { name: "Raise Date", uid: "raiseDate" },
-  { name: "Close Date", uid: "closeDate" },
+  { name: "State", uid: "closeDate" },
   { name: "Actions", uid: "actions" },
 ];
 
@@ -25,36 +25,13 @@ const Events = () => {
   const [form, setForm] = useState<any>({});
   const [searchTerm, setSearchTerm] = useState("");
 
-  const handleActionsModal = ({
-    action,
-    id = null,
-  }: {
-    action: string;
-    id?: string | null;
-  }) => {
-    setActionModal({
-      ...isActionModalOpen,
-      action: action,
-      isOpen: true,
-    });
-    if (action === "edit") {
-      const event = events.find((e) => e._id === id);
-      setForm({
-        ...event,
-      });
-    } else if (action === "delete") {
-      const event = events.find((e) => e._id === id);
-      setForm({
-        ...event,
-      });
-    }
-  };
   const handleActionsModalClose = () => {
     setActionModal({
       ...isActionModalOpen,
       isOpen: false,
       action: "",
     });
+    setForm({});
   };
   const { user } = useAuthStore((state) => state);
   useEffect(() => {
@@ -66,7 +43,7 @@ const Events = () => {
         },
       })
       .then((res) => {
-        // setEvents(res.data.data);
+        setEvents(res.data.events);
         console.log(res.data.events);
         setLoading(false);
       })
@@ -89,12 +66,41 @@ const Events = () => {
     });
   }, [filteredData]);
 
+  const handleActionsModal = ({
+    action,
+    id = null,
+  }: {
+    action: string;
+    id?: string | null;
+  }) => {
+    setActionModal({
+      ...isActionModalOpen,
+      action: action,
+      isOpen: true,
+    });
+    if (action === "edit") {
+      const event = data.find((e) => e.eventId === id);
+      setForm({
+        ...event,
+      });
+    } else if (action === "delete") {
+      const event = data.find((e) => e.eventId === id);
+      setForm({
+        ...event,
+      });
+    } else if (action === "view") {
+      const event = data.find((e) => e.eventId === id);
+      setForm({
+        ...event,
+      });
+    }
+  };
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (isActionModalOpen.action === "edit") {
       e.preventDefault();
       setLoading(true);
       try {
-        publicApi.put(`/api/v1/event/${form._id}`, form, {
+        publicApi.put(`/api/v1/event/${form.eventId}`, form, {
           headers: {
             Authorization: `Bearer ${user?.jwtToken}`,
           },
@@ -116,7 +122,7 @@ const Events = () => {
     } else if (isActionModalOpen.action === "delete") {
       setLoading(true);
       publicApi
-        .delete(`/api/v1/event/${form.oranizationId}`, {
+        .delete(`/api/v1/event/${form.eventId}`, {
           headers: {
             Authorization: `Bearer ${user?.jwtToken}`,
           },
@@ -251,20 +257,22 @@ const Events = () => {
       </div>
       <ModalContainer
         heading={
-          isActionModalOpen.action === "edit" ? "Edit Events" : "Delete Events"
+          isActionModalOpen.action === "edit"
+            ? "Edit Events"
+            : isActionModalOpen.action === "view"
+            ? "View Events"
+            : "Delete Events"
         }
         isOpen={isActionModalOpen.isOpen}
         onClose={handleActionsModalClose}
         cta={
           isActionModalOpen.action === "edit" ? "Edit Event" : "Delete Event"
         }
-        formid={
-          isActionModalOpen.action === "edit" ? "editevents" : "deleteevents"
-        }
+        formid={isActionModalOpen.action === "edit" ? "editevents" : ""}
         onSubmit={handleSubmit}
         ctaClass={isActionModalOpen.action === "delete" ? "danger" : "primary"}
         modalClass="text-mainBlack"
-        enableFooter={true}
+        enableFooter={isActionModalOpen.action === "view" ? false : true}
       >
         {isActionModalOpen.action === "delete" ? (
           <div className="w-full flex items-center justify-center">
@@ -272,7 +280,7 @@ const Events = () => {
               Are you sure you want to delete this event?
             </p>
           </div>
-        ) : (
+        ) : isActionModalOpen.action === "edit" ? (
           <>
             <div className="w-full flex items-center justify-center gap-1 flex-col py-2">
               <h1 className="capitalize text-sm font-medium">
@@ -320,18 +328,18 @@ const Events = () => {
                     required
                   />
                 </div>
-                <div className="relative flex items-center justify-center gap-2 w-full">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-2">
-                    <icon.BsCalendar2Date className="w-6 h-6 text-[#808080]" />
+                <div className="relative flex items-start justify-start gap-2 w-full">
+                  <div className="absolute inset-y-0 top-3 left-0 flex items-start pl-2">
+                    <icon.MdEventNote className="w-6 h-6 text-[#808080]" />
                   </div>
-                  <input
-                    type="date"
+                  <textarea
+                    rows={5}
                     className="flex bg-transparent text-sm w-full pl-10 pr-3 py-3 text-mainBlack border border-[#252525] rounded-[8px] focus:outline-none"
-                    placeholder="Raise Date"
-                    name="raiseDate"
+                    placeholder="Description"
+                    name="description"
                     required
                     onChange={handleInputChange}
-                    value={form.raiseDate || ""}
+                    value={form.description || ""}
                   />
                 </div>
                 <div className="relative flex items-center justify-center gap-2 w-full">
@@ -339,9 +347,9 @@ const Events = () => {
                     <icon.BsCalendarDateFill className="w-6 h-6 text-[#808080]" />
                   </div>
                   <input
-                    type="date"
+                    type="text"
                     className="flex bg-transparent text-sm w-full pl-10 fill-white pr-3 py-3 text-mainBlack border border-[#252525] rounded-[8px] focus:outline-none"
-                    placeholder="Event Close Date"
+                    placeholder="Event State"
                     name="closeDate"
                     required
                     onChange={handleInputChange}
@@ -351,10 +359,72 @@ const Events = () => {
               </div>
             </form>
           </>
+        ) : (
+          <>
+            <div className="w-full flex items-center justify-center gap-2 flex-col py-2">
+              <h1 className="capitalize text-sm font-medium">
+                {"Event Details"}
+              </h1>
+              {Object.entries(form).map(([key, value]) => {
+                if (["__v", "_id", "createdAt", "updatedAt", "userId"].includes(key))
+                  return null;
+
+                if (key === "description") {
+                  return (
+                    <div key={key} className="w-full py-2 flex flex-col items-start justify-start">
+                      <h2 className="text-lg font-semibold mb-2 capitalize">
+                        {key}
+                      </h2>
+                      <span className="text-base font-medium w-full">{value as React.ReactNode}</span>
+                    </div>
+                  );
+                }
+                return (
+                  <div
+                    key={key}
+                    className="flex justify-between w-full capitalize"
+                  >
+                    <span className="font-medium text-sm">{key}</span>
+                    <span className="text-xs font-normal truncate lowercase">
+                      {value as React.ReactNode}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </ModalContainer>
     </DashboardContainer>
   );
 };
-
+const renderDetails = (data: any) => {
+  return Object.entries(data).map(([key, value]) => {
+    if (["__v", "_id", "createdAt", "updatedAt", "unitDetails"].includes(key))
+      return null;
+    
+    if (value && typeof value === "object") {
+      return (
+        <div key={key} className="w-full py-2 flex gap-2">
+          <h3 className="text-md font-semibold mb-2 capitalize">
+            {key} Details
+          </h3>
+          <div className="">{renderDetails(value)}</div>{" "}
+         
+        </div>
+      );
+    }
+    return (
+      <div
+        key={key}
+        className="flex justify-between w-full capitalize gap-6 mt-2"
+      >
+        <span className="font-medium text-sm">{key}</span>
+        <span className="text-xs font-normal truncate lowercase">
+          {value as React.ReactNode}
+        </span>
+      </div>
+    );
+  });
+};
 export default Events;

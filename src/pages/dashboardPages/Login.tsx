@@ -66,7 +66,7 @@ const Login = () => {
                         required
                         type="email"
                         name="email"
-                        className="py-4 px-4 rounded-md border border-[#252525] bg-transparent text-[#cbcbcb] w-full focus:outline-none focus:ring-1 focus:ring-[#FFC947] focus:border-transparent"
+                        className="py-4 px-4 rounded-md border border-[#252525] bg-transparent text-black w-full focus:outline-none focus:ring-1 focus:ring-[#FFC947] focus:border-transparent"
                       />
                     </div>
                     <div className="w-full h-full flex items-start justify-center flex-col gap-2">
@@ -78,7 +78,7 @@ const Login = () => {
                         required
                         name="password"
                         placeholder="Enter your password"
-                        className="py-4 px-4 rounded-md border border-[#252525] bg-transparent text-[#cbcbcb] w-full focus:outline-none focus:ring-1 focus:ring-[#FFC947] focus:border-transparent"
+                        className="py-4 px-4 rounded-md border border-[#252525] bg-transparent text-black w-full focus:outline-none focus:ring-1 focus:ring-[#FFC947] focus:border-transparent"
                       />
                     </div>
                   </div>

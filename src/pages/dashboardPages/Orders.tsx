@@ -20,31 +20,33 @@ const columns = [
 
 const Orders = () => {
   const [isActionModalOpen, setActionModal] = useState<any>({});
-  const [loading, setLoading] = useState(false)
-  const [reload, setReload] = useState(false)
-  const [form, setForm] = useState<any>({})
+  const [loading, setLoading] = useState(false);
+  const [reload, setReload] = useState(false);
+  const [form, setForm] = useState<any>({});
   const [searchTerm, setSearchTerm] = useState("");
-  const {user} = useAuthStore(state => state);
+  const { user } = useAuthStore((state) => state);
   // @ts-ignore
-  const { orders, setOrders } = useOrdersStore(state => state);
+  const { orders, setOrders } = useOrdersStore((state) => state);
   useEffect(() => {
-    setLoading(true)
-    publicApi.get("/api/v1/order",{
-      headers: {
-        Authorization: `Bearer ${user?.jwtToken}`,
-      },
-    })
-      .then((res) => {
-        setOrders(res.data.data)
-        setLoading(false)
+    setLoading(true);
+    publicApi
+      .get("/api/v1/order", {
+        headers: {
+          Authorization: `Bearer ${user?.jwtToken}`,
+        },
       })
-      .catch((error) => console.log(error.message))
-  }, [reload])
+      .then((res) => {
+        setOrders(res.data.orders);
+        setLoading(false);
+      })
+      .catch((error) => console.log(error.message));
+  }, [reload]);
 
-  const filteredData = orders.filter((order: any) =>
-    order.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.phone.toString().includes(searchTerm.toLowerCase())
+  const filteredData = orders.filter(
+    (order: any) =>
+      order.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.phone.toString().includes(searchTerm.toLowerCase())
   );
 
   const data = React.useMemo(() => {
@@ -52,23 +54,35 @@ const Orders = () => {
       ...e,
       orderId: e._id,
     }));
-  }, [filteredData])
+  }, [filteredData]);
 
-  const handleActionsModal = ({ action, id = null }: { action: string, id?: string | null }) => {
+  const handleActionsModal = ({
+    action,
+    id = null,
+  }: {
+    action: string;
+    id?: string | null;
+  }) => {
     setActionModal({
       ...isActionModalOpen,
       action: action,
       isOpen: true,
     });
     if (action === "edit") {
-      const users = data.find((e:any) => e.organizationId === id);
+      const order = data.find((e: any) => e.orderId === id);
       setForm({
-        ...users,
+        ...order,
       });
     } else if (action === "delete") {
-      const users = data.find((e:any) => e.organizationId === id);
+      const order = data.find((e: any) => e.orderId === id);
       setForm({
-        ...users,
+        ...order,
+      });
+    } else if (action === "view") {
+      const order = data.find((e: any) => e.orderId === id);
+      console.log(order);
+      setForm({
+        ...order,
       });
     }
   };
@@ -83,9 +97,9 @@ const Orders = () => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (isActionModalOpen.action === "edit") {
       e.preventDefault();
-      setLoading(true)
+      setLoading(true);
       try {
-        publicApi.put(`/api/v1/order/${form._id}`, form, {
+        publicApi.put(`/api/v1/order/${form.orderId}`, form, {
           headers: {
             Authorization: `Bearer ${user?.jwtToken}`,
           },
@@ -102,28 +116,27 @@ const Orders = () => {
       } catch (error: any) {
         // Handle errors here, if needed
         toast.error(error.message);
-      }
-      finally {
-        setLoading(false)
+      } finally {
+        setLoading(false);
       }
     } else if (isActionModalOpen.action === "delete") {
-      setLoading(true)
-      publicApi.delete(`/api/v1/users/${form.oranizationId}`)
+      setLoading(true);
+      publicApi
+        .delete(`/api/v1/order/${form.orderId}`)
         .then((res) => {
-          toast.success(res.data.message)
-          setReload(!reload)
+          toast.success(res.data.message);
+          setReload(!reload);
           setActionModal({
             ...isActionModalOpen,
             isOpen: false,
             action: "",
           });
-          setForm({})
+          setForm({});
         })
         .catch((error) => toast.error(error.data.message))
-        .finally(() => setLoading(false))
+        .finally(() => setLoading(false));
     }
   };
-
 
   const handleInputChange = (e: any) => {
     setForm({
@@ -230,16 +243,14 @@ const Orders = () => {
               <button onClick={() => setReload(!reload)} type="button">
                 <icon.SlRefresh className="w-5 h-5 hover:rotate-[180deg] transition-all" />
               </button>
-              <div
-                className="rounded-md flex items-center justify-center gap-2"
-              >
+              <div className="rounded-md flex items-center justify-center gap-2">
                 <Input
-                color="primary"
-                placeholder="Search orders"
-                className="w-[20rem]"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                 />
+                  color="primary"
+                  placeholder="Search orders"
+                  className="w-[20rem]"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
             </div>
           </div>
@@ -258,24 +269,24 @@ const Orders = () => {
         heading={
           isActionModalOpen.action === "edit"
             ? "Edit Order"
-              : "Delete Order"
+            : isActionModalOpen.action === "view"
+            ? "View Order"
+            : "Delete Order"
         }
         isOpen={isActionModalOpen.isOpen}
         onClose={handleActionsModalClose}
         cta={
           isActionModalOpen.action === "edit"
             ? "Edit Order"
-              : "Delete Order"
+            : isActionModalOpen.action === "view"
+            ? "View Order"
+            : "Delete Order"
         }
-        formid={
-          isActionModalOpen.action === "edit"
-            ? "editorder"
-              : "deleteorder"
-        }
+        formid={isActionModalOpen.action === "edit" ? "editorder" : ""}
         onSubmit={handleSubmit}
         ctaClass={isActionModalOpen.action === "delete" ? "danger" : "primary"}
         modalClass="text-mainBlack"
-        enableFooter={true}
+        enableFooter={isActionModalOpen.action === "view" ? false : true}
       >
         {isActionModalOpen.action === "delete" ? (
           <div className="w-full flex items-center justify-center">
@@ -283,7 +294,7 @@ const Orders = () => {
               Are you sure you want to delete this Order?
             </p>
           </div>
-        ) : (
+        ) : isActionModalOpen.action === "edit" ? (
           <>
             <div className="w-full flex items-center justify-center gap-1 flex-col py-2">
               <h1 className="capitalize text-sm font-medium">
@@ -297,7 +308,7 @@ const Orders = () => {
               id={
                 isActionModalOpen.action === "edit"
                   ? "editorder"
-                    : "deleteorder"
+                  : "deleteorder"
               }
               onSubmit={handleSubmit}
               className="flex items-center justify-center gap-4 flex-col"
@@ -376,10 +387,70 @@ const Orders = () => {
               </div>
             </form>
           </>
+        ) : (
+          <>
+            <div className="w-full flex items-center justify-center gap-2 flex-col py-2">
+              <h1 className="capitalize text-sm font-medium">
+                {"Order Details"}
+              </h1>
+              {Object.entries(form).map(([key, value]) => {
+                if (["__v", "_id", "createdAt", "updatedAt"].includes(key))
+                  return null;
+
+                if (key === "unitId" && value && typeof value === "object") {
+                  return (
+                    <div key={key} className="w-full py-2">
+                      <h2 className="text-lg font-semibold mb-2 capitalize">
+                        Unit Details
+                      </h2>
+                      {renderDetails(value)}
+                    </div>
+                  );
+                }
+                return (
+                  <div
+                    key={key}
+                    className="flex justify-between w-full capitalize"
+                  >
+                    <span className="font-medium text-sm">{key}</span>
+                    <span className="text-xs font-normal truncate lowercase">
+                      {value as React.ReactNode}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </ModalContainer>
     </DashboardContainer>
   );
-}
-
-export default Orders
+};
+const renderDetails = (data: any) => {
+  return Object.entries(data).map(([key, value]) => {
+    if (["__v", "_id", "createdAt", "updatedAt", "unitDetails"].includes(key))
+      return null;
+    if (value && typeof value === "object") {
+      return (
+        <div key={key} className="w-full py-2 flex gap-2">
+          <h3 className="text-md font-semibold mb-2 capitalize">
+            {key} Details
+          </h3>
+          <div className="">{renderDetails(value)}</div>{" "}
+        </div>
+      );
+    }
+    return (
+      <div
+        key={key}
+        className="flex justify-between w-full capitalize gap-6 mt-2"
+      >
+        <span className="font-medium text-sm">{key}</span>
+        <span className="text-xs font-normal truncate lowercase">
+          {value as React.ReactNode}
+        </span>
+      </div>
+    );
+  });
+};
+export default Orders;
