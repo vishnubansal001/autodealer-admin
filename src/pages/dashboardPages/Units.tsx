@@ -518,11 +518,11 @@ const Units = () => {
                     <input
                       type="text"
                       className="flex bg-transparent text-sm w-full pl-10 pr-3 py-3 text-mainBlack border border-[#252525] rounded-[8px] focus:outline-none"
-                      placeholder="Petrol"
-                      name="petrol"
+                      placeholder="Oil Type"
+                      name="oil"
                       required
                       onChange={handleInputChange}
-                      value={form.petrol || ""}
+                      value={form.oil || ""}
                     />
                   </div>
                   <div className="relative flex items-center justify-center gap-2 w-full">
