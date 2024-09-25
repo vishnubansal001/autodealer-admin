@@ -5,6 +5,6 @@ import axios from "axios";
 //     withCredentials: true
 // });
 export const publicApi = axios.create({
-    baseURL: "http://localhost:4000",
+    baseURL: "https://auto-dealer-backend.vercel.app/",
     withCredentials: true
 });
